@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Discover</h1>
+
+<div class="row">
+    <div class="col-md-8">
+        <h2>Trending Posts</h2>
+        {% for post in trending_posts %}
+        <div class="card mb-3 post" id="post-{{ post.id }}">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-2">
+                    {% if post.author.profile_photo %}
+                        <img src="{{ url_for('get_user_image', user_id=post.author.id, image_type='profile') }}" alt="{{ post.author.username }}'s profile photo" class="rounded-circle mr-2" style="width: 40px; height: 40px;">
+                    {% else %}
+                        <div class="rounded-circle bg-secondary mr-2" style="width: 40px; height: 40px;"></div>
+                    {% endif %}
+                    <h5 class="card-title mb-0"><a href="{{ url_for('profile', username=post.author.username) }}">{{ post.author.username }}</a></h5>
+                </div>
+                <p class="card-text">{{ post.content }}</p>
+                {% if post.image_data %}
+                    <img src="{{ url_for('get_image', post_id=post.id) }}" alt="Post image" class="img-fluid mb-2">
+                {% endif %}
+                <p class="card-text"><small class="text-muted">Posted on: {{ post.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</small></p>
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="aura-points mr-2"><i class="fas fa-star"></i> <span class="aura-count">{{ post.aura_points }}</span></span>
+                        {% if current_user.is_authenticated %}
+                            <button class="btn btn-sm btn-outline-primary like-button" data-post-id="{{ post.id }}">
+                                {% if current_user.id in post.likes|map(attribute='user_id')|list %}
+                                    Unlike
+                                {% else %}
+                                    Like
+                                {% endif %}
+                            </button>
+                        {% endif %}
+                    </div>
+                    <button class="btn btn-sm btn-outline-secondary" data-toggle="collapse" data-target="#comments-{{ post.id }}">
+                        <i class="fas fa-comment"></i> Comments ({{ post.comments|length }})
+                    </button>
+                </div>
+                <div class="collapse mt-3" id="comments-{{ post.id }}">
+                    <div class="card card-body">
+                        {% if current_user.is_authenticated %}
+                        <form class="comment-form mb-3" data-post-id="{{ post.id }}">
+                            <div class="form-group">
+                                <textarea class="form-control" rows="2" placeholder="Add a comment..."></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-sm">Submit</button>
+                        </form>
+                        {% endif %}
+                        <div class="comments-container">
+                            {% for comment in post.comments %}
+                            <div class="comment mb-2">
+                                <strong>{{ comment.user.username }}</strong>: {{ comment.content }}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    <div class="col-md-4">
+        <h2>Popular Hashtags</h2>
+        <ul class="list-group">
+            {% for hashtag, post_count in popular_hashtags %}
+            <li class="list-group-item">
+                <a href="{{ url_for('search') }}?q=#{{ hashtag.name }}">#{{ hashtag.name }}</a> ({{ post_count }} posts)
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    $('.like-button').click(function() {
+        var postId = $(this).data('post-id');
+        var button = $(this);
+        $.ajax({
+            url: '/like/' + postId,
+            type: 'POST',
+            success: function(response) {
+                button.text(button.text() == 'Like' ? 'Unlike' : 'Like');
+                $('#post-' + postId + ' .aura-count').text(response.aura_points);
+            }
+        });
+    });
+
+    $('.comment-form').submit(function(e) {
+        e.preventDefault();
+        var postId = $(this).data('post-id');
+        var content = $(this).find('textarea').val();
+        var form = $(this);
+
+        $.post('/comment/' + postId, {content: content}, function(data) {
+            form.find('textarea').val('');
+            form.siblings('.comments-container').prepend(
+                '<div class="comment mb-2"><strong>{{ current_user.username }}</strong>: ' + content + '</div>'
+            );
+        });
+    });
+});
+</script>
+{% endblock %}

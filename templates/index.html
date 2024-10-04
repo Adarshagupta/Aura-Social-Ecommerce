@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h2 class="text-2xl font-bold mb-4 text-space-purple-800">Recent Posts</h2>
+    {% for post in posts %}
+        <div class="bg-white shadow-md rounded-lg mb-6 post" id="post-{{ post.id }}">
+            <div class="p-4">
+                <div class="flex items-center mb-4">
+                    {% if post.author.profile_photo %}
+                        <img src="{{ url_for('get_user_image', user_id=post.author.id, image_type='profile') }}" alt="{{ post.author.username }}'s profile photo" class="w-10 h-10 rounded-full mr-2">
+                    {% else %}
+                        <div class="w-10 h-10 rounded-full bg-space-purple-300 mr-2"></div>
+                    {% endif %}
+                    <h5 class="font-semibold"><a href="{{ url_for('profile', username=post.author.username) }}" class="text-space-purple-600 hover:underline">{{ post.author.username }}</a></h5>
+                </div>
+                <p class="mb-4 text-gray-700">{{ post.content }}</p>
+                {% if post.image_data %}
+                    <img src="{{ url_for('get_image', post_id=post.id) }}" alt="Post image" class="w-full mb-4 rounded-lg">
+                {% endif %}
+                <p class="text-sm text-gray-500 mb-4">Posted on: {{ post.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+                <div class="flex justify-between items-center">
+                    <div>
+                        <span class="text-yellow-500 mr-2"><i class="fas fa-star"></i> <span class="aura-count">{{ post.aura_points }}</span></span>
+                        {% if current_user.is_authenticated %}
+                            <button class="bg-space-purple-500 hover:bg-space-purple-600 text-white font-bold py-1 px-2 rounded text-sm like-button" data-post-id="{{ post.id }}">
+                                {% if current_user.id in post.likes|map(attribute='user_id')|list %}
+                                    Unlike
+                                {% else %}
+                                    Like
+                                {% endif %}
+                            </button>
+                        {% endif %}
+                    </div>
+                    <button class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-1 px-2 rounded text-sm" onclick="toggleComments('comments-{{ post.id }}')">
+                        <i class="fas fa-comment"></i> Comments ({{ post.comments|length }})
+                    </button>
+                </div>
+                <div class="hidden mt-4" id="comments-{{ post.id }}">
+                    {% if current_user.is_authenticated %}
+                    <form class="comment-form mb-4" data-post-id="{{ post.id }}">
+                        <textarea class="w-full p-2 border rounded" rows="2" placeholder="Add a comment..."></textarea>
+                        <button type="submit" class="mt-2 bg-space-purple-500 hover:bg-space-purple-600 text-white font-bold py-1 px-2 rounded text-sm">Submit</button>
+                    </form>
+                    {% endif %}
+                    <div class="comments-container">
+                        {% for comment in post.comments %}
+                        <div class="comment mb-2 p-2 bg-gray-100 rounded">
+                            <strong>{{ comment.user.username }}</strong>: {{ comment.content }}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toggleComments(commentId) {
+    var commentSection = document.getElementById(commentId);
+    if (commentSection.classList.contains('hidden')) {
+        commentSection.classList.remove('hidden');
+    } else {
+        commentSection.classList.add('hidden');
+    }
+}
+
+$(document).ready(function() {
+    $('.like-button').click(function() {
+        var postId = $(this).data('post-id');
+        var button = $(this);
+        $.ajax({
+            url: '/like/' + postId,
+            type: 'POST',
+            success: function(response) {
+                button.text(button.text() == 'Like' ? 'Unlike' : 'Like');
+                $('#post-' + postId + ' .aura-count').text(response.aura_points);
+            }
+        });
+    });
+
+    $('.comment-form').submit(function(e) {
+        e.preventDefault();
+        var postId = $(this).data('post-id');
+        var content = $(this).find('textarea').val();
+        var form = $(this);
+
+        $.post('/comment/' + postId, {content: content}, function(data) {
+            form.find('textarea').val('');
+            form.siblings('.comments-container').prepend(
+                '<div class="comment mb-2 p-2 bg-gray-100 rounded"><strong>{{ current_user.username }}</strong>: ' + content + '</div>'
+            );
+        });
+    });
+});
+</script>
+{% endblock %}

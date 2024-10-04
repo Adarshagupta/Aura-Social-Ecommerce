@@ -1,0 +1,7 @@
+Flask
+Flask-SQLAlchemy
+psycopg2-binary
+Flask-Login
+Pillow
+Werkzeug
+Flask-Migrate

@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="profile-container">
+    <div class="profile-header">
+        {% if user.banner_photo %}
+            <div class="banner-photo" style="background-image: url('{{ url_for('get_user_image', user_id=user.id, image_type='banner') }}');"></div>
+        {% endif %}
+        <div class="profile-info">
+            <div class="profile-photo-container">
+                {% if user.profile_photo %}
+                    <img src="{{ url_for('get_user_image', user_id=user.id, image_type='profile') }}" alt="Profile Photo" class="profile-photo">
+                {% else %}
+                    <div class="default-profile-photo">{{ user.username[0] | upper }}</div>
+                {% endif %}
+            </div>
+            <divs class="user-details">
+                <h1 class="username">{{ user.username }}</h1>
+                <div class="aura-points">
+                    <span class="aura">{{ user.aura_points }} <i class="fas fa-star"></i></span>
+                    <span class="super-aura">{{ user.super_aura_points }} <i class="fas fa-sun"></i></span>
+                </div>
+                {% if user.bio %}
+                    <p class="bio">{{ user.bio }}</p>
+                {% endif %}
+                {% if current_user.is_authenticated and current_user.id == user.id %}
+                    <a href="{{ url_for('edit_profile') }}" class="edit-profile-btn">Edit Profile</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="posts-grid">
+        <h2>Posts</h2>
+        <div class="grid-container">
+            {% for post in posts %}
+                <div class="grid-item">
+                    {% if post.image_data %}
+                        <img src="{{ url_for('get_image', post_id=post.id) }}" alt="Post image" class="post-image">
+                    {% endif %}
+                    <div class="post-overlay">
+                        <p class="post-likes"><i class="fas fa-heart"></i> {{ post.likes|length }}</p>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

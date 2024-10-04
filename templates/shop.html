@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h2>Shop</h2>
+    {% for product in products %}
+        <div class="product">
+            <h3>{{ product.name }}</h3>
+            <p>{{ product.description }}</p>
+            <p>Price: {{ product.price_aura }} Aura Points + {{ product.price_super_aura }} Super Aura Points</p>
+            <a href="{{ url_for('buy_product', product_id=product.id) }}">Buy</a>
+        </div>
+    {% endfor %}
+{% endblock %}

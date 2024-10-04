@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>Edit Profile</h1>
+    <form method="POST" enctype="multipart/form-data">
+        <div>
+            <label for="bio">Bio:</label>
+            <textarea id="bio" name="bio">{{ current_user.bio }}</textarea>
+        </div>
+        <div>
+            <label for="profile_photo">Profile Photo:</label>
+            <input type="file" id="profile_photo" name="profile_photo" accept="image/*">
+        </div>
+        <div>
+            <label for="banner_photo">Banner Photo:</label>
+            <input type="file" id="banner_photo" name="banner_photo" accept="image/*">
+        </div>
+        <button type="submit">Save Changes</button>
+    </form>
+{% endblock %}
